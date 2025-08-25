@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SNS最適化ダッシュボード - 会員限定サービス
 
-## Getting Started
+SNS広告の配分を最適化するための会員限定ダッシュボードです。複数のSNSプラットフォーム（Instagram、TikTok、Facebook）の広告データを分析し、費用対効果（ROAS）に基づいて最適な予算配分を提案します。
 
-First, run the development server:
+## 🚀 主な機能
 
+### 認証システム
+- 会員限定のログイン機能
+- セキュアなダッシュボードアクセス
+- ログアウト機能
+
+### 予算配分の自動提案
+- 各プラットフォームの費用対効果（ROAS）を分析
+- 過去のデータに基づいて最適な予算配分を計算
+- AIによる自動サマリーで提案理由を説明
+
+### プラットフォーム別パフォーマンス分析
+- **クリック率（CTR）**：表示に対するクリックの割合
+- **購入率（CVR）**：クリックに対する購入の割合
+- **獲得コスト（CPA）**：1件の購入を獲得するためのコスト
+- **クリック単価（CPC）**：1回のクリックにかかるコスト
+- **費用対効果（ROAS）**：投資額に対する売上の比率
+- **スルー率**：表示を見たがクリックしなかった割合
+
+### セグメント分析
+- 年齢×性別による詳細な分析
+- 各セグメントの費用対効果を可視化
+- ターゲティングの最適化に活用
+
+### トレンド分析
+- 日別のROAS推移をグラフで表示
+- プラットフォーム別のパフォーマンス変化を追跡
+
+### 男女別クリック分布
+- 全体のクリックデータを性別で集計
+- ターゲット層の理解に活用
+
+## 🛠️ 技術構成
+
+- **フレームワーク**: Next.js 15 + React 19
+- **言語**: TypeScript
+- **スタイリング**: Tailwind CSS
+- **グラフ**: Recharts（チャートライブラリ）
+- **データ処理**: カスタムユーティリティ関数
+- **認証**: ローカルストレージベース（デモ用）
+
+## 🚀 セットアップ
+
+### 必要な環境
+- Node.js 18以上
+- pnpm（推奨）またはnpm
+
+### インストール
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 依存関係のインストール
+pnpm install
+
+# 開発サーバーの起動
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### アクセス方法
+1. ブラウザで [http://localhost:3000](http://localhost:3000) にアクセス
+2. 自動的にログインページにリダイレクトされます
+3. デモ用アカウントでログイン
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔐 デモ用アカウント
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **メールアドレス**: admin@example.com
+- **パスワード**: password123
 
-## Learn More
+## 📱 ページ構成
 
-To learn more about Next.js, take a look at the following resources:
+- **`/`** - メインページ（ログインページにリダイレクト）
+- **`/login`** - ログイン画面
+- **`/dashboard`** - 会員限定ダッシュボード
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🎨 UI/UXの特徴
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- モダンでクリーンなデザイン
+- レスポンシブ対応
+- 直感的なグラフとチャート
+- カラフルな視覚化でデータを分かりやすく表示
+- グラデーションとシャドウを活用した洗練されたデザイン
 
-## Deploy on Vercel
+## 🔮 今後の拡張可能性
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 本格的な認証システム（JWT、OAuth等）
+- CSV/APIからの実データ連携
+- より詳細な分析機能
+- 予測モデルの実装
+- 自動最適化機能
+- ユーザー管理機能
+- プラン別の機能制限
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📊 データ処理の特徴
+
+- **EMA（指数移動平均）**による予算配分の計算
+- **探索率5%**で新しい可能性を考慮
+- **上下限制限**（5%-60%）でリスクを管理
+- リアルタイムでの統計計算
+
+## 🚨 注意事項
+
+- 現在はデモ用のダミーデータを使用
+- 認証はローカルストレージベース（本番環境では適切な認証システムを実装してください）
+- 実際の運用では、セキュリティ対策を強化してください
+
+## 📄 ライセンス
+
+このプロジェクトは会員限定サービスとして提供されています。
