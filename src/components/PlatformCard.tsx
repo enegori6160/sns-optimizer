@@ -46,6 +46,12 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({ stats, index }) => {
           </div>
         </div>
         <div className="rounded-lg bg-slate-50 p-3">
+          <div className="text-slate-500">クリック単価 (CPC)</div>
+          <div className="text-lg font-semibold">
+            {Number.isFinite(stats.cpc) ? `¥${Math.round(stats.cpc).toLocaleString()}` : "—"}
+          </div>
+        </div>
+        <div className="rounded-lg bg-slate-50 p-3 col-span-2">
           <div className="text-slate-500">費用対効果</div>
           <div className="text-lg font-semibold">{stats.roas.toFixed(2)}</div>
         </div>
