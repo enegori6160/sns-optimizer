@@ -8,12 +8,13 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Legend,
-} from "recharts";
-import { PlatformTrend } from "../utils/dataProcessing";
+  } from "recharts";
+// ROAS 推移データの型をインポート
+import { PlatformRoasTrend } from "@/lib/analytics";
 
-interface ROASTrendChartProps {
-  platformTrend: PlatformTrend[];
-}
+  interface ROASTrendChartProps {
+    platformTrend: PlatformRoasTrend[];
+  }
 
 export const ROASTrendChart: React.FC<ROASTrendChartProps> = ({
   platformTrend,

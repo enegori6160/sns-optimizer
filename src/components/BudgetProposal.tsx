@@ -1,8 +1,9 @@
 import React from "react";
-import { BudgetProposal as BudgetProposalType } from "../utils/dataProcessing";
+// 予算配分結果の型をインポート
+import { BudgetAllocation } from "@/lib/analytics";
 
 interface BudgetProposalProps {
-  proposal: BudgetProposalType[];
+  proposal: BudgetAllocation[];
   aiSummary: string;
 }
 

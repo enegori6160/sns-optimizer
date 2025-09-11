@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -7,18 +7,25 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-} from "recharts";
-import { PlatformStats, bySegment, rawDaily } from "../utils/dataProcessing";
+  } from "recharts";
+// 型定義と集計関数をインポート
+import { PlatformStats, aggregateBySegment, DailyData } from "@/lib/analytics";
 
-interface PlatformCardProps {
-  stats: PlatformStats;
-  index: number;
-}
+  interface PlatformCardProps {
+    stats: PlatformStats;
+    index: number;
+    rawData: DailyData[];
+  }
 
 const colors = ["#64748b", "#22c55e", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6"];
 
-export const PlatformCard: React.FC<PlatformCardProps> = ({ stats, index }) => {
-  return (
+  export const PlatformCard: React.FC<PlatformCardProps> = ({ stats, index, rawData }) => {
+    // プラットフォームごとのセグメント集計をメモ化
+    const segmentData = useMemo(
+      () => aggregateBySegment(rawData, stats.platform),
+      [rawData, stats.platform]
+    );
+    return (
     <div className="rounded-2xl bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold">{stats.platform}</h3>
@@ -64,8 +71,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({ stats, index }) => {
       </div>
       {/* セグメント（年齢×性別）簡易棒グラフ */}
       <div className="h-40">
-        <ResponsiveContainer>
-          <BarChart data={bySegment(rawDaily, stats.platform)}>
+          <ResponsiveContainer>
+            <BarChart data={segmentData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="key" hide />
             <YAxis hide />
