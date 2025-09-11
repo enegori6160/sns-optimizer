@@ -1,27 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SettingsPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState<string>("");
-  const router = useRouter();
-
-  useEffect(() => {
-    const auth = localStorage.getItem("isAuthenticated");
-    const email = localStorage.getItem("userEmail");
-
-    if (auth === "true" && email) {
-      setIsAuthenticated(true);
-      setUserEmail(email);
-    } else {
-      router.push("/login");
-    }
-    setIsLoading(false);
-  }, [router]);
+  // 認証情報を取得
+  const { isAuthenticated, isLoading, userEmail } = useAuth();
 
   if (isLoading) {
     return (

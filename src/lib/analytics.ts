@@ -1,5 +1,7 @@
 // ──────────────────────────────────────────────────────────────
-// データ処理ユーティリティ
+// 分析用ユーティリティ関数群
+//   - 各種統計値の計算やサマリー生成を行う
+//   - ダミーデータは API などに置き換え可能
 // ──────────────────────────────────────────────────────────────
 
 export interface DailyData {
@@ -29,7 +31,8 @@ export interface PlatformStats {
   skipRate: number;
 }
 
-export interface BudgetProposal {
+// 予算配分結果を表す型
+export interface BudgetAllocation {
   platform: string;
   ratio: number;
   budget: number;
@@ -50,7 +53,8 @@ export interface SegmentData {
   efficiency: number;
 }
 
-export interface PlatformTrend {
+// プラットフォーム別 ROAS 推移の型
+export interface PlatformRoasTrend {
   date: string;
   Instagram: number;
   TikTok: number;
@@ -85,8 +89,8 @@ export const rawDaily: DailyData[] = [
   { date: "2025-08-22", platform: "Facebook",  impressions: 11500, clicks: 128, cost: 25000, conversions: 11, revenue: 22000, age: "30代", gender: "M"},
 ];
 
-// プラットフォーム別の統計を計算
-export const byPlatform = (rows: DailyData[]): PlatformStats[] => {
+// プラットフォーム別の統計を集計
+export const aggregateByPlatform = (rows: DailyData[]): PlatformStats[] => {
   const acc: Record<string, any> = {};
   for (const r of rows) {
     const k = r.platform;
@@ -109,30 +113,41 @@ export const byPlatform = (rows: DailyData[]): PlatformStats[] => {
 };
 
 // 提案配分（費用対効果(ROAS)のEMA比例 + 探索5% + 上下限 5%-60%）
-export const proposeAllocation = (stats: PlatformStats[], totalBudget: number, window = 5): BudgetProposal[] => {
-  const alpha = 2 / (window + 1);
-  // 簡易：過去からのroas推移がないので、合算ROASをそのままEMA扱い
-  const roases = stats.map(s => s.roas);
-  const base = roases.reduce((a,b)=>a+b,0) === 0
-    ? Array(stats.length).fill(1/stats.length)
-    : roases.map(r => r / roases.reduce((a,b)=>a+b,0));
+export const calculateBudgetAllocation = (
+  stats: PlatformStats[],
+  totalBudget: number,
+  window = 5
+): BudgetAllocation[] => {
+  // 過去推移がないため単純に ROAS 比例とする
+  const roases = stats.map((s) => s.roas);
+  const base =
+    roases.reduce((a, b) => a + b, 0) === 0
+      ? Array(stats.length).fill(1 / stats.length)
+      : roases.map((r) => r / roases.reduce((a, b) => a + b, 0));
 
+  // 探索要素を付与し、各プラットフォームに最低限予算を割り振る
   const exploration = 0.05;
-  let w = base.map((b) => (1 - exploration) * b + exploration * (1 / base.length));
-  const MIN = 0.05, MAX = 0.60;
-  w = w.map(x => Math.min(MAX, Math.max(MIN, x)));
-  const sum = w.reduce((a,b)=>a+b,0);
-  w = w.map(x => x / sum);
+  let weights = base.map(
+    (b) => (1 - exploration) * b + exploration * (1 / base.length)
+  );
+  const MIN = 0.05,
+    MAX = 0.6;
+  weights = weights.map((x) => Math.min(MAX, Math.max(MIN, x)));
+  const sum = weights.reduce((a, b) => a + b, 0);
+  weights = weights.map((x) => x / sum);
 
   return stats.map((s, i) => ({
     platform: s.platform,
-    ratio: w[i],
-    budget: Math.round(w[i] * totalBudget),
+    ratio: weights[i],
+    budget: Math.round(weights[i] * totalBudget),
   }));
 };
 
 // セグメント（年齢×性別）の集計
-export const bySegment = (rows: DailyData[], platform: string): SegmentData[] => {
+export const aggregateBySegment = (
+  rows: DailyData[],
+  platform: string
+): SegmentData[] => {
   const acc: Record<string, any> = {};
   for (const r of rows.filter(r => r.platform === platform)) {
     const k = `${r.age}-${r.gender}`;
@@ -152,10 +167,12 @@ export const bySegment = (rows: DailyData[], platform: string): SegmentData[] =>
   }));
 };
 
-// プラットフォーム別のROAS推移を計算
-export const getPlatformTrend = (): PlatformTrend[] => {
+// プラットフォーム別の ROAS 推移を計算
+export const calculatePlatformTrend = (
+  rows: DailyData[]
+): PlatformRoasTrend[] => {
   const byDate: Record<string, any> = {};
-  for (const r of rawDaily) {
+  for (const r of rows) {
     const key = r.date;
     if (!byDate[key]) byDate[key] = { date: key, Instagram: 0, TikTok: 0, Facebook: 0, cInstagram:0,cTikTok:0,cFacebook:0 };
     const roas = r.cost ? r.revenue / r.cost : 0;
@@ -170,12 +187,26 @@ export const getPlatformTrend = (): PlatformTrend[] => {
   return Object.values(byDate).sort((a:any,b:any)=>a.date.localeCompare(b.date));
 };
 
-// AIサマリーを生成
-export const generateAISummary = (stats: PlatformStats[], proposal: BudgetProposal[]): string => {
-  const best = [...stats].sort((a,b)=>b.roas - a.roas)[0]?.platform;
-  const worst = [...stats].sort((a,b)=>a.roas - b.roas)[0]?.platform;
-  const igSeg = bySegment(rawDaily, "Instagram").sort((a,b)=>b.efficiency - a.efficiency)[0];
-  return `本日の提案は「${proposal.map(p=>`${p.platform}${Math.round(p.ratio*100)}%`).join(" / ") }」。` +
-         `${best}が費用対効果で最良。${worst}は獲得コストが高めのため抑制推奨。` +
-         (igSeg ? `Instagramでは「${igSeg.age}${igSeg.gender === "F" ? "女性" : "男性"}」が高反応。` : "");
-}; 
+// AI サマリーを生成
+export const createAISummary = (
+  stats: PlatformStats[],
+  proposal: BudgetAllocation[],
+  rows: DailyData[]
+): string => {
+  const best = [...stats].sort((a, b) => b.roas - a.roas)[0]?.platform;
+  const worst = [...stats].sort((a, b) => a.roas - b.roas)[0]?.platform;
+  const igSeg = aggregateBySegment(rows, "Instagram").sort(
+    (a, b) => b.efficiency - a.efficiency
+  )[0];
+  return (
+    `本日の提案は「${proposal
+      .map((p) => `${p.platform}${Math.round(p.ratio * 100)}%`)
+      .join(" / ")}」。` +
+    `${best}が費用対効果で最良。${worst}は獲得コストが高めのため抑制推奨。` +
+    (igSeg
+      ? `Instagramでは「${igSeg.age}${
+          igSeg.gender === "F" ? "女性" : "男性"
+        }」が高反応。`
+      : "")
+  );
+};
