@@ -64,6 +64,23 @@ export interface PlatformRoasTrend {
   cFacebook: number;
 }
 
+type AggregatedPlatformBase = Pick<
+  PlatformStats,
+  "platform" | "impressions" | "clicks" | "cost" | "conversions" | "revenue"
+>;
+
+type AggregatedSegmentBase = Pick<
+  SegmentData,
+  "key" | "age" | "gender" | "impressions" | "clicks" | "cost" | "conversions" | "revenue"
+>;
+
+const SUPPORTED_PLATFORMS = ["Instagram", "TikTok", "Facebook"] as const;
+type SupportedPlatform = (typeof SUPPORTED_PLATFORMS)[number];
+type PlatformCounterKey = `c${SupportedPlatform}`;
+
+const isSupportedPlatform = (platform: string): platform is SupportedPlatform =>
+  SUPPORTED_PLATFORMS.includes(platform as SupportedPlatform);
+
 // ダミーデータ（CSV/APIに置換可能）
 export const rawDaily: DailyData[] = [
   // date, platform, impressions, clicks, cost, conversions, revenue, age, gender
@@ -91,7 +108,7 @@ export const rawDaily: DailyData[] = [
 
 // プラットフォーム別の統計を集計
 export const aggregateByPlatform = (rows: DailyData[]): PlatformStats[] => {
-  const acc: Record<string, any> = {};
+  const acc: Record<string, AggregatedPlatformBase> = {};
   for (const r of rows) {
     const k = r.platform;
     if (!acc[k]) acc[k] = { platform: k, impressions: 0, clicks: 0, cost: 0, conversions: 0, revenue: 0 };
@@ -101,7 +118,7 @@ export const aggregateByPlatform = (rows: DailyData[]): PlatformStats[] => {
     acc[k].conversions += r.conversions;
     acc[k].revenue     += r.revenue;
   }
-  return Object.values(acc).map((x: any) => ({
+  return Object.values(acc).map((x) => ({
     ...x,
     ctr: x.clicks / Math.max(1, x.impressions),
     cvr: x.conversions / Math.max(1, x.clicks),
@@ -118,6 +135,7 @@ export const calculateBudgetAllocation = (
   totalBudget: number,
   window = 5
 ): BudgetAllocation[] => {
+  void window;
   // 過去推移がないため単純に ROAS 比例とする
   const roases = stats.map((s) => s.roas);
   const base =
@@ -148,7 +166,7 @@ export const aggregateBySegment = (
   rows: DailyData[],
   platform: string
 ): SegmentData[] => {
-  const acc: Record<string, any> = {};
+  const acc: Record<string, AggregatedSegmentBase> = {};
   for (const r of rows.filter(r => r.platform === platform)) {
     const k = `${r.age}-${r.gender}`;
     if (!acc[k]) acc[k] = { key: k, age: r.age, gender: r.gender, impressions: 0, clicks: 0, cost: 0, conversions: 0, revenue: 0 };
@@ -158,7 +176,7 @@ export const aggregateBySegment = (
     acc[k].conversions += r.conversions;
     acc[k].revenue     += r.revenue;
   }
-  return Object.values(acc).map((x: any) => ({
+  return Object.values(acc).map((x) => ({
     ...x,
     clickRate: x.clicks / Math.max(1, x.impressions),
     purchaseRate: x.conversions / Math.max(1, x.clicks),
@@ -171,20 +189,22 @@ export const aggregateBySegment = (
 export const calculatePlatformTrend = (
   rows: DailyData[]
 ): PlatformRoasTrend[] => {
-  const byDate: Record<string, any> = {};
+  const byDate: Record<string, PlatformRoasTrend> = {};
   for (const r of rows) {
     const key = r.date;
     if (!byDate[key]) byDate[key] = { date: key, Instagram: 0, TikTok: 0, Facebook: 0, cInstagram:0,cTikTok:0,cFacebook:0 };
     const roas = r.cost ? r.revenue / r.cost : 0;
-    const cap = (p: string) => {
-      const k = `c${p}` as const;
+    const cap = (p: SupportedPlatform) => {
+      const k: PlatformCounterKey = `c${p}`;
       const v = (byDate[key][k] ?? 0) + 1;
       byDate[key][k] = v;
       byDate[key][p] = ((byDate[key][p] ?? 0) * (v-1) + roas) / v;
     };
-    cap(r.platform as any);
+    if (isSupportedPlatform(r.platform)) {
+      cap(r.platform);
+    }
   }
-  return Object.values(byDate).sort((a:any,b:any)=>a.date.localeCompare(b.date));
+  return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
 };
 
 // AI サマリーを生成
